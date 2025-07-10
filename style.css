@@ -42,30 +42,6 @@ textarea {
     box-sizing: border-box;
 }
 
-.copy-btn,
-.paste-btn {
-    position: absolute;
-    top: 8px;
-    right: 10px;
-    background: #3b82f6;
-    color: white;
-    border: none;
-    padding: 5px 8px;
-    font-size: 0.8rem;
-    border-radius: 5px;
-    cursor: pointer;
-    z-index: 2;
-}
-
-.paste-btn {
-    right: 75px;
-    background: #10b981;
-}
-
-.copy-btn:hover,
-.paste-btn:hover {
-    opacity: 0.9;
-}
 
 .radio-group {
     display: flex;
@@ -78,6 +54,24 @@ textarea {
 .radio-group label {
     font-weight: 500;
     font-size: 1rem;
+}
+.copy-btn {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    background: #3b82f6;
+    color: #fff;
+    border: none;
+    padding: 7px 14px;
+    font-size: 0.95rem;
+    border-radius: 6px;
+    cursor: pointer;
+    box-shadow: 0 2px 6px rgba(59,130,246,0.08);
+}
+
+.copy-btn:hover {
+    background: #2563eb;
+    opacity: 0.95;
 }
 
 input[type="password"] {
