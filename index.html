@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Lango Encoder & Decoder</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+<div class="container">
+  <h1>🔐 Lango Encoder & Decoder</h1>
+  <form id="lango-form">
+    <div class="radio-group">
+      <label><input type="radio" name="option" value="encode" checked> Encode</label>
+      <label><input type="radio" name="option" value="decode"> Decode</label>
+    </div>
+
+    <input type="password" name="password" id="password" placeholder="Enter password" required />
+
+    <div class="input-wrapper">
+      <textarea name="text" id="text" placeholder="Enter your message here..." required></textarea>
+      <button type="button" class="paste-btn" onclick="pasteText('text')">Paste</button>
+      <button type="button" class="copy-btn" onclick="copyText('text')">Copy</button>
+    </div>
+
+    <button type="submit">Process</button>
+  </form>
+
+  <div class="output-wrapper" style="display: none;" id="output-wrapper">
+    <div class="result" id="output-box">
+      <button type="button" class="copy-btn" onclick="copyResult()">Copy</button>
+      <strong>Result:</strong><br>
+      <span id="copy-target"></span>
+    </div>
+  </div>
+</div>
+
+<script>
+  const form = document.getElementById('lango-form');
+  const resultWrapper = document.getElementById('output-wrapper');
+  const resultBox = document.getElementById('copy-target');
+  const textInput = document.getElementById('text');
+  const passwordInput = document.getElementById('password');
+  const radioInputs = document.querySelectorAll('input[name="option"]');
+
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const option = document.querySelector('input[name="option"]:checked').value;
+    const text = textInput.value.trim();
+    const password = passwordInput.value;
+
+    if (!text || !password) {
+      resultBox.innerText = "[!] Text and password are required.";
+      resultWrapper.style.display = 'block';
+      return;
+    }
+
+    let result = '';
+    if (option === 'encode') {
+      result = await encodeMessage(text, password);
+    } else {
+      result = await decodeMessage(text, password);
+    }
+
+    resultBox.innerText = result;
+    resultWrapper.style.display = 'block';
+  });
+
+  function copyText(id) {
+    const el = document.getElementById(id);
+    const text = el.value.trim();
+    navigator.clipboard.writeText(text)
+      .then(() => console.log("Input copied"))
+      .catch(() => alert("Failed to copy"));
+  }
+
+  function pasteText(id) {
+    navigator.clipboard.readText()
+      .then(text => {
+        document.getElementById(id).value = text;
+      })
+      .catch(() => alert("Clipboard access denied"));
+  }
+
+  function copyResult() {
+    const resultText = document.getElementById("copy-target").innerText.trim();
+    navigator.clipboard.writeText(resultText)
+      .then(() => console.log("Output copied"))
+      .catch(() => alert("Failed to copy result"));
+  }
+
+  // 🔁 Clear fields on option switch
+  radioInputs.forEach(radio => {
+    radio.addEventListener('change', () => {
+      textInput.value = '';
+      passwordInput.value = '';
+      resultBox.innerText = '';
+      resultWrapper.style.display = 'none';
+    });
+  });
+
+  // Encryption/Decryption Logic (AES-GCM + PBKDF2)
+  async function deriveKey(password, salt) {
+    const encoder = new TextEncoder();
+    const keyMaterial = await window.crypto.subtle.importKey(
+      "raw",
+      encoder.encode(password),
+      { name: "PBKDF2" },
+      false,
+      ["deriveKey"]
+    );
+    return window.crypto.subtle.deriveKey(
+      {
+        name: "PBKDF2",
+        salt: salt,
+        iterations: 100000,
+        hash: "SHA-256"
+      },
+      keyMaterial,
+      { name: "AES-GCM", length: 256 },
+      false,
+      ["encrypt", "decrypt"]
+    );
+  }
+
+  async function encodeMessage(message, password) {
+    const encoder = new TextEncoder();
+    const salt = window.crypto.getRandomValues(new Uint8Array(16));
+    const nonce = window.crypto.getRandomValues(new Uint8Array(12));
+    const key = await deriveKey(password, salt);
+    const ciphertext = await window.crypto.subtle.encrypt(
+      { name: "AES-GCM", iv: nonce },
+      key,
+      encoder.encode(message)
+    );
+    const fullBuffer = new Uint8Array([...salt, ...nonce, ...new Uint8Array(ciphertext)]);
+    return btoa(String.fromCharCode(...fullBuffer)).replace(/\+/g, "-").replace(/\//g, "_");
+  }
+
+  async function decodeMessage(encodedMessage, password) {
+    try {
+      const base64 = encodedMessage.replace(/-/g, "+").replace(/_/g, "/");
+      const binary = atob(base64);
+      const data = Uint8Array.from(binary, c => c.charCodeAt(0));
+      const salt = data.slice(0, 16);
+      const nonce = data.slice(16, 28);
+      const ciphertext = data.slice(28);
+      const key = await deriveKey(password, salt);
+      const decrypted = await window.crypto.subtle.decrypt(
+        { name: "AES-GCM", iv: nonce },
+        key,
+        ciphertext
+      );
+      return new TextDecoder().decode(decrypted);
+    } catch (e) {
+      return "[!] Decryption failed — wrong password or invalid data";
+    }
+  }
+</script>
+</body>
+</html>
