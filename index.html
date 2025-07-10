@@ -15,21 +15,20 @@
       <label><input type="radio" name="option" value="decode"> Decode</label>
     </div>
 
-    <input type="password" name="password" id="password" placeholder="Enter password" required />
-
     <div class="input-wrapper">
       <textarea name="text" id="text" placeholder="Enter your message here..." required></textarea>
-      <button type="button" class="paste-btn" onclick="pasteText('text')">Paste</button>
-      <button type="button" class="copy-btn" onclick="copyText('text')">Copy</button>
     </div>
-
+      <div class="private-key-wrapper">
+    <label for="password" class="private-key-label">Private Key</label>
+    <input type="password" name="password" id="password" placeholder="Enter private key" required />
+    </div>
     <button type="submit">Process</button>
   </form>
 
   <div class="output-wrapper" style="display: none;" id="output-wrapper">
     <div class="result" id="output-box">
       <button type="button" class="copy-btn" onclick="copyResult()">Copy</button>
-      <strong>Result:</strong><br>
+      <strong>Final message:</strong><br>
       <span id="copy-target"></span>
     </div>
   </div>
@@ -66,21 +65,6 @@
     resultWrapper.style.display = 'block';
   });
 
-  function copyText(id) {
-    const el = document.getElementById(id);
-    const text = el.value.trim();
-    navigator.clipboard.writeText(text)
-      .then(() => console.log("Input copied"))
-      .catch(() => alert("Failed to copy"));
-  }
-
-  function pasteText(id) {
-    navigator.clipboard.readText()
-      .then(text => {
-        document.getElementById(id).value = text;
-      })
-      .catch(() => alert("Clipboard access denied"));
-  }
 
   function copyResult() {
     const resultText = document.getElementById("copy-target").innerText.trim();
@@ -153,7 +137,7 @@
       );
       return new TextDecoder().decode(decrypted);
     } catch (e) {
-      return "[!] Decryption failed — wrong password or invalid data";
+      return "[!] Decryption failed — wrong private key or invalid data";
     }
   }
 </script>
